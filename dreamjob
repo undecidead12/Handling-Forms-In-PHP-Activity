@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang=”en”>
+<head>
+    <meta charset=”UTF-8”>
+    <title>Job Registration System</title>
+    <style>
+        Body { font-family: Arial; max-width: 800px; margin: 40px auto; background: #f0f0f0; }
+        H1 { text-align: center; }
+        Table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        Th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+        Th { background: #007bff; color: white; }
+        Input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+        Button { padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
+        .actions a { margin-right: 10px; text-decoration: none; }
+        .delete { color: red; }
+        .edit { color: blue; }
+    </style>
+</head>
+<body>
+
+<h1>Registration Form for Your Dream Job</h1>
+
+<?php
+$host = ‘localhost’;
+$user = ‘root’;
+$pass = ‘’; // Change if you have password
+$db   = ‘job_registration’;
+
+$conn = new mysqli($host, $user, $pass, $db);
+
+If ($conn->connect_error) {
+    Die(“Connection failed: “ . $conn->connect_error);
+}
+
+// Create table if not exists (8+ columns)
+$sql = “CREATE TABLE IF NOT EXISTS applicants (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    First_name VARCHAR(50) NOT NULL,
+    Last_name VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) NOT NULL,
+    Phone VARCHAR(20),
+    Dream_job VARCHAR(100) NOT NULL,
+    Experience_years INT,
+    Skills TEXT,
+    Education VARCHAR(100)
+)”;
+$conn->query($sql);
+
+// Handle Delete
+If (isset($_GET[‘delete’])) {
+    $id = intval($_GET[‘delete’]);
+    $conn->query(“DELETE FROM applicants WHERE id=$id”);
+}
+
+// Handle Edit (Update)
+If (isset($_POST[‘update’])) {
+    $id = intval($_POST[‘id’]);
+    $first_name = $conn->real_escape_string($_POST[‘first_name’]);
+    $last_name = $conn->real_escape_string($_POST[‘last_name’]);
+    $email = $conn->real_escape_string($_POST[‘email’]);
+    $phone = $conn->real_escape_string($_POST[‘phone’]);
+    $dream_job = $conn->real_escape_string($_POST[‘dream_job’]);
+    $experience = intval($_POST[‘experience_years’]);
+    $skills = $conn->real_escape_string($_POST[‘skills’]);
+    $education = $conn->real_escape_string($_POST[‘education’]);
+    
+    $conn->query(“UPDATE applicants SET first_name=’$first_name’, last_name=’$last_name’, email=’$email’, phone=’$phone’, dream_job=’$dream_job’, experience_years=$experience, skills=’$skills’, education=’$education’ WHERE id=$id”);
+}
+
+// Handle Add
+If (isset($_POST[‘add’])) {
+    $first_name = $conn->real_escape_string($_POST[‘first_name’]);
+    $last_name = $conn->real_escape_string($_POST[‘last_name’]);
+    $email = $conn->real_escape_string($_POST[‘email’]);
+    $phone = $conn->real_escape_string($_POST[‘phone’]);
+    $dream_job = $conn->real_escape_string($_POST[‘dream_job’]);
+    $experience = intval($_POST[‘experience_years’]);
+    $skills = $conn->real_escape_string($_POST[‘skills’]);
+    $education = $conn->real_escape_string($_POST[‘education’]);
+    
+    $conn->query(“INSERT INTO applicants (first_name, last_name, email, phone, dream_job, experience_years, skills, education) 
+                  VALUES (‘$first_name’, ‘$last_name’, ‘$email’, ‘$phone’, ‘$dream_job’, $experience, ‘$skills’, ‘$education’)”);
+}
+
+// Edit form
+$edit = null;
+If (isset($_GET[‘edit’])) {
+    $id = intval($_GET[‘edit’]);
+    $result = $conn->query(“SELECT * FROM applicants WHERE id=$id”);
+    $edit = $result->fetch_assoc();
+}
+?>
+
+<form method=”post”>
+    <h2><?php echo $edit ? ‘Update Record’ : ‘Add New Record’; ?></h2>
+    <?php if ($edit): ?><input type=”hidden” name=”id” value=”<?php echo $edit[‘id’]; ?>”><?php endif; ?>
+    <table>
+        <tr><td>First Name</td><td><input type=”text” name=”first_name” value=”<?php echo $edit[‘first_name’] ?? ‘’; ?>” required></td></tr>
+        <tr><td>Last Name</td><td><input type=”text” name=”last_name” value=”<?php echo $edit[‘last_name’] ?? ‘’; ?>” required></td></tr>
+        <tr><td>Email</td><td><input type=”email” name=”email” value=”<?php echo $edit[‘email’] ?? ‘’; ?>” required></td></tr>
+        <tr><td>Phone</td><td><input type=”text” name=”phone” value=”<?php echo $edit[‘phone’] ?? ‘’; ?>”></td></tr>
+        <tr><td>Dream Job</td><td><input type=”text” name=”dream_job” value=”<?php echo $edit[‘dream_job’] ?? ‘’; ?>” required></td></tr>
+        <tr><td>Years of Experience</td><td><input type=”number” name=”experience_years” value=”<?php echo $edit[‘experience_years’] ?? ‘0’; ?>”></td></tr>
+        <tr><td>Skills</td><td><input type=”text” name=”skills” value=”<?php echo $edit[‘skills’] ?? ‘’; ?>”></td></tr>
+        <tr><td>Education</td><td><input type=”text” name=”education” value=”<?php echo $edit[‘education’] ?? ‘’; ?>”></td></tr>
+    </table>
+    <button type=”submit” name=”<?php echo $edit ? ‘update’ : ‘add’; ?>”>
+        <?php echo $edit ? ‘Update’ : ‘Register’; ?>
+    </button>
+</form>
+
+<h2>Registered Applicants</h2>
+<table>
+    <tr>
+        <th>ID</th><th>First Name</th><th>Last Name</th><th>Email</th><th>Phone</th><th>Dream Job</th><th>Experience</th><th>Skills</th><th>Education</th><th>Actions</th>
+    </tr>
+    <?php
+    $result = $conn->query(“SELECT * FROM applicants”);
+    While ($row = $result->fetch_assoc()):
+    ?>
+    <tr>
+        <td><?php echo $row[‘id’]; ?></td>
+        <td><?php echo htmlspecialchars($row[‘first_name’]); ?></td>
+        <td><?php echo htmlspecialchars($row[‘last_name’]); ?></td>
+        <td><?php echo htmlspecialchars($row[‘email’]); ?></td>
+        <td><?php echo htmlspecialchars($row[‘phone’]); ?></td>
+        <td><?php echo htmlspecialchars($row[‘dream_job’]); ?></td>
+        <td><?php echo $row[‘experience_years’]; ?></td>
+        <td><?php echo htmlspecialchars($row[‘skills’]); ?></td>
+        <td><?php echo htmlspecialchars($row[‘education’]); ?></td>
+        <td class=”actions”>
+            <a href=”?edit=<?php echo $row[‘id’]; ?>” class=”edit”>Edit</a>
+            <a href=”?delete=<?php echo $row[‘id’]; ?>” class=”delete” onclick=”return confirm(‘Delete?’)">Delete</a>
+        </td>
+    </tr>
+    <?php endwhile; ?>
+</table>
+
+</body>
+</html>
+
